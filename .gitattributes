@@ -1,0 +1,4 @@
+YoutubeDownloader/tools/ffmpeg.exe filter=lfs diff=lfs merge=lfs -text
+YoutubeDownloader/tools/ffprobe.exe filter=lfs diff=lfs merge=lfs -text
+YoutubeDownloader/bin/Debug/net8.0-windows/tools/ffmpeg.exe filter=lfs diff=lfs merge=lfs -text
+YoutubeDownloader/bin/Debug/net8.0-windows/tools/ffprobe.exe filter=lfs diff=lfs merge=lfs -text
