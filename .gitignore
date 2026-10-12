@@ -1,0 +1,56 @@
+# Visual Studio user-specific files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+
+# Visual Studio generated files
+Generated\ Files/
+*.generated.cs
+*.AssemblyAttributes.cs
+
+# Test results and coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+
+# NuGet packages and caches
+packages/
+.nuget/
+*.nupkg
+*.snupkg
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.partial
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.Local.json
+
+# Local external executables/dependencies (download separately)
+# Keep these locally, but do not commit third-party binaries by default.
+YoutubeDownloader/tools/*.exe
+YoutubeDownloader/tools/*.dll
