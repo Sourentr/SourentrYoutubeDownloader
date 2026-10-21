@@ -1,4 +1,4 @@
-﻿<Window x:Class="YoutubeDownloader.MainWindow"
+<Window x:Class="YoutubeDownloader.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Youtube Downloader"
@@ -224,7 +224,8 @@
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="Center"/>
+                                VerticalAlignment="Center"
+                                TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -282,16 +283,13 @@
 
                     <Button x:Name="DownloaderNavButton"
                             Style="{StaticResource NavigationButton}"
-                            Background="{DynamicResource C_292644}"
-                            Foreground="{DynamicResource C_BDB5FF}"
                             Content="⌂    Downloader"
                             Click="DownloaderNavigation_Click"/>
 
-                    <Button Style="{StaticResource NavigationButton}"
-                            Content="▤    My Downloads"/>
-
-                    <Button Style="{StaticResource NavigationButton}"
-                            Content="◷    History"/>
+                    <Button x:Name="HistoryNavButton"
+                            Style="{StaticResource NavigationButton}"
+                            Content="◷    History"
+                            Click="HistoryNavigation_Click"/>
 
                     <TextBlock Text="PREFERENCES"
                                Foreground="{DynamicResource C_737F95}"
@@ -632,6 +630,90 @@
                            HorizontalAlignment="Center"
                            Margin="0,25,0,0"/>
 
+            </StackPanel>
+
+            <StackPanel x:Name="HistoryPage" Margin="34,28,34,35" Visibility="Collapsed">
+                <Grid Margin="0,0,0,24">
+                    <StackPanel>
+                        <TextBlock Text="History" FontSize="28" FontWeight="Bold"/>
+                        <TextBlock Text="Review recent successful and failed download attempts."
+                                   Foreground="{DynamicResource C_919BB0}" FontSize="13" Margin="0,7,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="Refresh" Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,8,0" Click="RefreshHistoryButton_Click"/>
+                        <Button Content="Clear history" Style="{StaticResource SecondaryButton}"
+                                Click="ClearHistoryButton_Click"/>
+                    </StackPanel>
+                </Grid>
+                <Border Background="{DynamicResource C_171C27}" BorderBrush="{DynamicResource C_293142}"
+                        BorderThickness="1" CornerRadius="14" Padding="16">
+                    <StackPanel>
+                            <DataGrid x:Name="HistoryDataGrid"
+                                        AutoGenerateColumns="False"
+                                        IsReadOnly="True"
+                                        CanUserAddRows="False"
+                                        SelectionMode="Single"
+                                        HeadersVisibility="Column"
+                                        Background="{DynamicResource C_171C27}"
+                                        Foreground="{DynamicResource C_F1F3F9}"
+                                        BorderThickness="0"
+                                        RowBackground="{DynamicResource C_171C27}"
+                                        AlternatingRowBackground="{DynamicResource C_1B2230}"
+                                        GridLinesVisibility="Horizontal"
+                                        HorizontalGridLinesBrush="{DynamicResource C_293142}"
+                                        MinHeight="280">
+
+                                <DataGrid.Resources>
+                                    <!-- History cell colours -->
+                                    <Style TargetType="{x:Type DataGridCell}">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground"
+                    Value="{DynamicResource C_F1F3F9}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Padding" Value="6,8"/>
+                                    </Style>
+
+                                    <!-- Column heading colours -->
+                                    <Style TargetType="{x:Type DataGridColumnHeader}">
+                                        <Setter Property="Background"
+                    Value="{DynamicResource C_222938}"/>
+                                        <Setter Property="Foreground"
+                    Value="{DynamicResource C_AAB3C5}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Padding" Value="8,10"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        <Setter Property="BorderBrush"
+                    Value="{DynamicResource C_293142}"/>
+                                    </Style>
+                                </DataGrid.Resources>
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Title"
+                            Binding="{Binding Title}"
+                            Width="2*"/>
+                                    <DataGridTextColumn Header="Date"
+                            Binding="{Binding DateText}"
+                            Width="150"/>
+                                    <DataGridTextColumn Header="Format"
+                            Binding="{Binding Format}"
+                            Width="90"/>
+                                    <DataGridTextColumn Header="Status"
+                            Binding="{Binding Status}"
+                            Width="95"/>
+                                    <DataGridTextColumn Header="Details"
+                            Binding="{Binding Message}"
+                            Width="2*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock x:Name="HistoryEmptyText" Text="No download attempts recorded yet."
+                                   Foreground="{DynamicResource C_919BB0}" FontSize="12" Margin="0,12,0,0"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                            <Button Content="Open saved file" Style="{StaticResource PrimaryButton}"
+                                    Click="OpenHistoryFileButton_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <StackPanel x:Name="SettingsPage" Margin="34,28,34,35" Visibility="Collapsed">

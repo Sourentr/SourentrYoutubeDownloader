@@ -9,10 +9,19 @@ This version replaces the YouTube Data API metadata dependency with yt-dlp for m
 3. For MP3 extraction and merging/converting some video formats, install FFmpeg and make `ffmpeg.exe` and `ffprobe.exe` available either in the same `tools` folder or on your Windows PATH.
 4. Open `YoutubeDownloader.sln` in Visual Studio 2022 with the .NET 8 SDK installed. Build and run.
 
-The project copies files in the `tools` folder to the build output folder.
+The project copies files in the `tools` folder to the build output folder. The application does not need `YOUTUBE_API_KEY` for metadata lookup after this change.
 
 ## Notes
 
 - Video quality is treated as a maximum resolution; if the source has no stream at that resolution, yt-dlp can select a lower available one.
 - MP3 output and some MP4 merging/re-encoding operations require FFmpeg. Full YouTube extractor support may also require a supported JavaScript runtime such as Deno.
 - Download only media you are authorised to download and follow the applicable platform terms and copyright law.
+- This archive intentionally excludes Visual Studio `.vs`, `bin`, and `obj` generated folders.
+
+
+## My Downloads and History
+
+- **My Downloads** lists files in the save folder currently selected on the Downloader page. Use Refresh after adding/removing files outside the app.
+- **History** records completed and failed download attempts locally, up to the latest 500 entries. Clearing history does not delete downloaded media.
+- Preferences and history are stored in `%AppData%\YoutubeDownloader\settings.json` and `%AppData%\YoutubeDownloader\history.json`.
+- To open a selected file, select its row and use **Open file** / **Open saved file**.

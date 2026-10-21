@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO;
 using System.Text.Json;
+using System.Diagnostics;
+using System.Linq;
 
 
 namespace YoutubeDownloader
@@ -40,6 +42,7 @@ namespace YoutubeDownloader
             ["252D3B"] = "#D8DEE9", ["292644"] = "#E8E5FF", ["293142"] = "#D8DEE9",
             ["30394B"] = "#C7CFDD", ["343D50"] = "#B9C2D1", ["3B4255"] = "#DDE3ED",
             ["54D6A0"] = "#168454", ["667188"] = "#647084", ["737F95"] = "#657186",
+            ["292644"] = "#E8E5FF", ["BDB5FF"] = "#6554D8",
             ["8175F5"] = "#7162E8", ["8BE4BB"] = "#16794D", ["919BB0"] = "#596579",
             ["A99FFF"] = "#6554D8", ["AAB3C5"] = "#596579", ["BDB5FF"] = "#6554D8",
             ["F1F3F9"] = "#1C2433", ["F3F4F6"] = "#1C2433"
@@ -54,47 +57,44 @@ namespace YoutubeDownloader
                 "Downloads");
 
             LoadThemePreference();
+            ShowPage(DownloaderPage);
         }
 
-        private void DownloaderNavigation_Click(object sender, RoutedEventArgs e)
+        private void ShowPage(UIElement page)
         {
-            // Show the Downloader page
-            DownloaderPage.Visibility = Visibility.Visible;
-            SettingsPage.Visibility = Visibility.Collapsed;
-
-            // Highlight Downloader
-            DownloaderNavButton.Background =
-                (System.Windows.Media.Brush)FindResource("C_292644");
-
-            DownloaderNavButton.Foreground =
-                (System.Windows.Media.Brush)FindResource("C_BDB5FF");
-
-            // Remove highlight from Settings
-            SettingsNavButton.Background = System.Windows.Media.Brushes.Transparent;
-
-            SettingsNavButton.Foreground =
-                (System.Windows.Media.Brush)FindResource("C_AAB3C5");
-        }
-
-        private void SettingsNavigation_Click(object sender, RoutedEventArgs e)
-        {
-            // Show the Settings page
-            SettingsPage.Visibility = Visibility.Visible;
             DownloaderPage.Visibility = Visibility.Collapsed;
+            HistoryPage.Visibility = Visibility.Collapsed;
+            SettingsPage.Visibility = Visibility.Collapsed;
+            page.Visibility = Visibility.Visible;
 
-            // Highlight Settings
-            SettingsNavButton.Background =
-                (System.Windows.Media.Brush)FindResource("C_292644");
-
-            SettingsNavButton.Foreground =
-                (System.Windows.Media.Brush)FindResource("C_BDB5FF");
-
-            // Remove highlight from Downloader
-            DownloaderNavButton.Background = System.Windows.Media.Brushes.Transparent;
-
-            DownloaderNavButton.Foreground =
-                (System.Windows.Media.Brush)FindResource("C_AAB3C5");
+            UpdateNavigationButton(DownloaderNavButton, page == DownloaderPage);
+            UpdateNavigationButton(HistoryNavButton, page == HistoryPage);
+            UpdateNavigationButton(SettingsNavButton, page == SettingsPage);
         }
+
+        private void UpdateNavigationButton(System.Windows.Controls.Button button, bool isSelected)
+        {
+            if (isSelected)
+            {
+                button.SetResourceReference(BackgroundProperty, "C_292644");
+                button.SetResourceReference(ForegroundProperty, "C_BDB5FF");
+            }
+            else
+            {
+                button.Background = System.Windows.Media.Brushes.Transparent;
+                button.SetResourceReference(ForegroundProperty, "C_AAB3C5");
+            }
+        }
+
+        private void DownloaderNavigation_Click(object sender, RoutedEventArgs e) => ShowPage(DownloaderPage);
+
+        private void HistoryNavigation_Click(object sender, RoutedEventArgs e)
+        {
+            ShowPage(HistoryPage);
+            RefreshHistory();
+        }
+
+        private void SettingsNavigation_Click(object sender, RoutedEventArgs e) => ShowPage(SettingsPage);
 
         private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -112,8 +112,7 @@ namespace YoutubeDownloader
             foreach (var entry in LightPalette)
             {
                 string colour = light ? entry.Value : "#" + entry.Key;
-                var parsedColour = (System.Windows.Media.Color)
-                    System.Windows.Media.ColorConverter.ConvertFromString(colour);
+                var parsedColour = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colour);
                 Resources["C_" + entry.Key] = new SolidColorBrush(parsedColour);
             }
         }
@@ -157,6 +156,70 @@ namespace YoutubeDownloader
             {
                 // Theme still applies for this session if the preference cannot be saved.
             }
+        }
+
+        private void RefreshHistoryButton_Click(object sender, RoutedEventArgs e) => RefreshHistory();
+
+        private void RefreshHistory()
+        {
+            var entries = DownloadHistoryService.Load().OrderByDescending(entry => entry.Timestamp).ToList();
+            HistoryDataGrid.ItemsSource = entries;
+            HistoryEmptyText.Visibility = entries.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ClearHistoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult answer = System.Windows.MessageBox.Show(this,
+                "Clear all download history? This does not delete any downloaded files.",
+                "Clear history", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (answer != MessageBoxResult.Yes)
+                return;
+
+            DownloadHistoryService.Clear();
+            RefreshHistory();
+        }
+
+        private void OpenHistoryFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (HistoryDataGrid.SelectedItem is not DownloadHistoryEntry entry || string.IsNullOrWhiteSpace(entry.FilePath))
+            {
+                System.Windows.MessageBox.Show(this, "Select a successful download with a saved file path first.", "History", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (!File.Exists(entry.FilePath))
+            {
+                System.Windows.MessageBox.Show(this, "That file no longer exists at its recorded location.", "History", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            OpenPath(entry.FilePath);
+        }
+
+        private void OpenPath(string path)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(this, "Could not open the selected item: " + ex.Message, "Youtube Downloader", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void RecordDownloadAttempt(string title, string sourceUrl, string format, bool succeeded, string filePath, string message)
+        {
+            DownloadHistoryService.Add(new DownloadHistoryEntry
+            {
+                Title = string.IsNullOrWhiteSpace(title) ? "Unknown title" : title,
+                SourceUrl = sourceUrl,
+                Format = format,
+                Status = succeeded ? "Completed" : "Failed",
+                FilePath = succeeded ? filePath : "",
+                Message = message,
+                Timestamp = DateTime.Now
+            });
+            RefreshHistory();
         }
 
         private void BrowseFolderButton_Click(
@@ -331,6 +394,13 @@ namespace YoutubeDownloader
             }
 
             DownloadButton.IsEnabled = false;
+            bool downloadSucceeded = false;
+            string historyMessage = "Download failed.";
+            string historySavedPath = "";
+            string historyTitle = VideoTitleText.Text == "No media selected" || string.IsNullOrWhiteSpace(VideoTitleText.Text)
+                ? sourceUrl : VideoTitleText.Text;
+            bool selectedAudio = FormatComboBox.SelectedIndex == 1;
+            string historyFormat = selectedAudio ? "MP3" : "MP4";
 
             DownloadProgressBar.IsIndeterminate = true;
             DownloadProgressBar.Value = 0;
@@ -424,6 +494,12 @@ namespace YoutubeDownloader
                         timeout.Token);
                 }
 
+                downloadSucceeded = true;
+                historySavedPath = savedPath;
+                historyMessage = "Saved successfully.";
+                if (!string.IsNullOrWhiteSpace(VideoTitleText.Text) && VideoTitleText.Text != "No media selected")
+                    historyTitle = VideoTitleText.Text;
+
                 DownloadProgressBar.IsIndeterminate = false;
                 DownloadProgressBar.Value = 100;
                 ProgressPercentText.Text = "100%";
@@ -436,41 +512,44 @@ namespace YoutubeDownloader
             catch (ArgumentException ex)
             {
                 ProgressStatusText.Text = "Invalid URL";
-                StatusText.Text = "URL error: " + ex.Message;
+                historyMessage = "URL error: " + ex.Message;
+                StatusText.Text = historyMessage;
             }
             catch (HttpRequestException ex)
             {
                 ProgressStatusText.Text = "Download failed";
-                StatusText.Text =
-                    $"Could not download the file: {ex.Message}";
+                historyMessage = $"Could not download the file: {ex.Message}";
+                StatusText.Text = historyMessage;
             }
             catch (InvalidOperationException ex)
             {
                 ProgressStatusText.Text = "Download failed";
+                historyMessage = ex.Message;
                 StatusText.Text = ex.Message;
             }
             catch (OperationCanceledException)
             {
                 ProgressStatusText.Text = "Download timed out";
-                StatusText.Text =
-                    "The download took too long. Please try again.";
+                historyMessage = "The download took too long. Please try again.";
+                StatusText.Text = historyMessage;
             }
             catch (IOException ex)
             {
                 ProgressStatusText.Text = "File error";
-                StatusText.Text =
-                    $"Could not save the file: {ex.Message}";
+                historyMessage = $"Could not save the file: {ex.Message}";
+                StatusText.Text = historyMessage;
             }
             catch (Exception ex)
             {
                 ProgressStatusText.Text = "Download failed";
-                StatusText.Text =
-                    $"Unexpected error: {ex.Message}";
+                historyMessage = $"Unexpected error: {ex.Message}";
+                StatusText.Text = historyMessage;
             }
             finally
             {
                 DownloadProgressBar.IsIndeterminate = false;
                 DownloadButton.IsEnabled = true;
+                RecordDownloadAttempt(historyTitle, sourceUrl, historyFormat, downloadSucceeded, historySavedPath, historyMessage);
             }
         }
 
